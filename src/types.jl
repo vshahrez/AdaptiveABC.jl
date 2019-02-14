@@ -37,27 +37,24 @@ end
 
 # ABC algorithm output structure
 struct ABCfit
-  pts::Array{Any,2}
-  sig::Array{Any,2}
-  wts::Array{Any,2}
-  p::Array{Float64,2}
-  its::Array{Int64,1}
-  dists::Array{Float64,2}
-  epsilon::Array{Float64,1}
-  temp::Array{Float64,2}
-  pacc::Array{Float64}
-  names::Array{Any,1}
-  models::Array{Any,1}
+  # for these four, M[i, j] corresponds to iteration i and model j
+  populations::AbstractMatrix{PopulationMatrix}
+  covariances::AbstractMatrix{CovarianceMatrix}
+  weights::AbstractMatrix{WeightsVector}
+  probabilities::AbstractMatrix{Float64}
+  # these two correspond to the latest iteration only
+  # they squash all models together (and have an extra model indexing parameter)
+  latest_population::AbstractMatrix{Float64}
+  latest_distances::AbstractVector{Float64}
+  # Information about the progression of the algorithm: one item per iteration
+  ntries::AbstractVector{Int}
+  epsilons::AbstractVector{Float64}
+  acceptance_rates::AbstractVector{Float64}
+  # Names of variables used--one list per model
+  names::AbstractVector{NamesVector}
 end
 
-# struct ABCfit
-#   pts::Array{Any,2}
-#   sig::Array{Any,2}
-#   wts::Array{Any,2}
-#   p::Array{Float64,2}
-#   its::Array{Int64,1}
-#   dists::Array{Float64,2}
-#   epsilon::Array{Float64,1}
-#   temp::Array{Float64,2}
-#   pacc::Array{Float64}
-# end
+const PopulationMatrix = AbstractMatrix{Float64}
+const CovarianceMatrix = AbstractMatrix{Float64}
+const WeightsVector = AbstractVector{Float64}
+const NamesVector = AbstractVector{String}  # or Symbol?
