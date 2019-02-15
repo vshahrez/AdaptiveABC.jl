@@ -36,7 +36,7 @@ struct Model
 end
 
 # ABC algorithm output structure
-struct ABCfit
+struct APMCResult
   # for these four, M[i, j] corresponds to iteration i and model j
   populations::AbstractMatrix{PopulationMatrix}
   covariances::AbstractMatrix{CovarianceMatrix}
