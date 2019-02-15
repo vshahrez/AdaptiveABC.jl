@@ -46,6 +46,18 @@ model_lens=vcat(Uniform(0,2),Uniform(0,20),Uniform(0,20),Uniform(0,1),Uniform(0,
 # parameters: number of particles, data to be fit to, vector of models, vector of error functions, termination parameter (the smaller
 # you choose the longer fitting runs, can set to zero), numbers of workers to spawn (set to 0 in case parellel computing not set up)
 test_lens=APMC(100,expd_lens,Vector[model_lens],[rho_lens],paccmin=0.01)
+
+
+
+
+
+
+#-----------
+
+
+
+
+
 #plot bivariate posterior of a vs b
 scatter(test_lens.pts[1,end][1,:],test_lens.pts[1,end][2,:])
 

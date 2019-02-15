@@ -13,11 +13,17 @@ struct APMCResult
   ntries::AbstractVector{Int}
   epsilons::AbstractVector{Float64}
   acceptance_rates::AbstractVector{Float64}
-  # Names of variables used--one list per model
+  # Priors and names of variables used--one list per model
+  parameterpriors::AbstractVector{ParameterPriorVector}
   names::AbstractVector{NamesVector}
 end
 
 const PopulationMatrix = AbstractMatrix{Float64}
 const CovarianceMatrix = AbstractMatrix{Float64}
 const WeightsVector = AbstractVector{Float64}
+const ParameterPriorVector = AbstractVector{ParameterPrior}
 const NamesVector = AbstractVector{String}  # or Symbol?
+
+const ParameterPrior = AbstractVector{ContinuousUnivariateDistribution}  # multivariate?
+
+# Note: priors on models assumed to be uniform for now.
