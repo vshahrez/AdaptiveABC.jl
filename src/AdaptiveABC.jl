@@ -3,7 +3,7 @@ module AdaptiveABC
 using Distributions
 
 include("types.jl")
-include("abc2.jl")
+include("APMC.jl")
 
 export ABCfit,
   APMC
