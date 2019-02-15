@@ -1,4 +1,49 @@
-# ABC algorithm output structure
+const PopulationMatrix = AbstractMatrix{Float64}
+const CovarianceMatrix = AbstractMatrix{Float64}
+const WeightsVector = AbstractVector{Float64}
+const ParameterPriorVector = AbstractVector{ParameterPrior}
+const NamesVector = AbstractVector{String}  # or Symbol?
+
+const ParameterPrior = AbstractVector{ContinuousUnivariateDistribution}  # multivariate?
+
+# Note: priors on models assumed to be uniform for now.struct APMCInput
+
+struct APMCInput
+  simulators::AbstractVector{Function}
+  parameterpriors::AbstractVector{ParameterPriorVector}
+  metric::Function
+  populationsize::Int
+  quantilethreshold::Float64
+  minacceptance::Float64
+  names::AbstractVector{NamesVector}
+
+  function APMCInput(
+      simulators, parameterpriors, metric,
+      populationsize, quantilethreshold, minacceptance, names)
+    populationsize > 0 || DomainError("population size must be greater than zero")
+    0.0 <= quantilethreshold <= 1.0 || DomainError("quantile threshold must be between zero and one inclusive")
+    0.0 <= minacceptance <= 1.0 || DomainError("minimum acceptance rate must be between zero and one inclusive")
+    return new(
+      simulators, parameterpriors, metric,
+      populationsize, quantilethreshold, minacceptance, names
+      )
+  end
+end
+
+function APMCInput(
+    simulators, parameterpriors, metric;
+    populationsize = 1000,
+    quantilethreshold = 0.5,
+    minacceptance = 0.02,
+    names = [[string("p", i) for i in eachindex(simulators[m])] for m in eachindex(simulators)]
+    )
+  return APMCInput(
+    simulators, parameterpriors, metric,
+    populationsize, quantilethreshold, minacceptance, names
+    )
+end
+
+# APMC algorithm output structure
 struct APMCResult
   # for these four, M[i, j] corresponds to iteration i and model j
   populations::AbstractMatrix{PopulationMatrix}
@@ -17,13 +62,3 @@ struct APMCResult
   parameterpriors::AbstractVector{ParameterPriorVector}
   names::AbstractVector{NamesVector}
 end
-
-const PopulationMatrix = AbstractMatrix{Float64}
-const CovarianceMatrix = AbstractMatrix{Float64}
-const WeightsVector = AbstractVector{Float64}
-const ParameterPriorVector = AbstractVector{ParameterPrior}
-const NamesVector = AbstractVector{String}  # or Symbol?
-
-const ParameterPrior = AbstractVector{ContinuousUnivariateDistribution}  # multivariate?
-
-# Note: priors on models assumed to be uniform for now.

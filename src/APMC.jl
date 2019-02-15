@@ -34,6 +34,32 @@ function cont(models,pts,wts,expd,np,i,ker,rho)
   return vcat(m,params,fill(0,maximum(np)-np[m]),d,count)
 end
 
+function modelselection(
+    input::APMCInput,
+    reference;
+    APMC_kwargs...
+    )
+  distance_generators = [
+    function(reference_data, parameters)
+      simulated_data = simulator(parameters)
+      return input.metric(simulated_data, reference_data)
+    end
+    for simulator in input.simulators
+    ]
+  result = APMC(
+    input.populationsize,
+    reference,
+    input.parameterpriors,
+    distance_generators;
+    names = input.names,
+    prop = input.quantilethreshold,
+    paccmin = input.minacceptance,
+    APMC_kwargs...
+    )
+
+  return result
+end
+
 function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:length(models[m])] for m in 1:length(models)],prop=0.5,paccmin=0.02,n=2)
   i=1
   lm=length(models)

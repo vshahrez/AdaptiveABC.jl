@@ -7,7 +7,7 @@ using StatsBase: weights
 include("types.jl")
 include("APMC.jl")
 
-export ABCfit,
-  APMC
+export APMCInput, APMCResult,
+  modelselection, APMC
 
 end # module
