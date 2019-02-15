@@ -1,12 +1,11 @@
+const ParameterPrior = AbstractVector{ContinuousUnivariateDistribution}  # multivariate?
+# Note: priors on models assumed to be uniform for now
+
 const PopulationMatrix = AbstractMatrix{Float64}
 const CovarianceMatrix = AbstractMatrix{Float64}
 const WeightsVector = AbstractVector{Float64}
 const ParameterPriorVector = AbstractVector{ParameterPrior}
 const NamesVector = AbstractVector{String}  # or Symbol?
-
-const ParameterPrior = AbstractVector{ContinuousUnivariateDistribution}  # multivariate?
-
-# Note: priors on models assumed to be uniform for now.struct APMCInput
 
 struct APMCInput
   simulators::AbstractVector{Function}
@@ -15,7 +14,7 @@ struct APMCInput
   populationsize::Int
   quantilethreshold::Float64
   minacceptance::Float64
-  names::AbstractVector{NamesVector}
+  names::Union{AbstractVector{NamesVector}, Nothing}
 
   function APMCInput(
       simulators, parameterpriors, metric,
@@ -35,8 +34,14 @@ function APMCInput(
     populationsize = 1000,
     quantilethreshold = 0.5,
     minacceptance = 0.02,
-    names = [[string("p", i) for i in eachindex(simulators[m])] for m in eachindex(simulators)]
+    names = nothing
     )
+  if names === nothing
+    names = [
+      [string("p", i) for i in eachindex(simulators[m])]
+      for m in eachindex(simulators)
+      ]
+  end
   return APMCInput(
     simulators, parameterpriors, metric,
     populationsize, quantilethreshold, minacceptance, names
