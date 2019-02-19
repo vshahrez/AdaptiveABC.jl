@@ -1,7 +1,7 @@
 module AdaptiveABC
   using Distributed: @distributed
   using Distributions
-  using LinearAlgebra: dot
+  using LinearAlgebra
   using StatsBase: weights
 
   include("types.jl")
