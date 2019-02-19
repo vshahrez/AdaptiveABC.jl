@@ -1,11 +1,11 @@
-const ParameterPrior = AbstractVector{ContinuousUnivariateDistribution}  # multivariate?
-# Note: priors on models assumed to be uniform for now
-
 const PopulationMatrix = AbstractMatrix{Float64}
 const CovarianceMatrix = AbstractMatrix{Float64}
 const WeightsVector = AbstractVector{Float64}
-const ParameterPriorVector = AbstractVector{ParameterPrior}
+# parameter priors and names: a vector for each model with length = nparameters
+const ParameterPriorVector = AbstractVector{ContinuousUnivariateDistribution}
 const NamesVector = AbstractVector{String}  # or Symbol?
+
+# Note: priors on models assumed to be uniform for now
 
 struct APMCInput
   simulators::AbstractVector{Function}
