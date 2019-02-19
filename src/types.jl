@@ -56,13 +56,17 @@ struct APMCResult
   weights::AbstractMatrix{WeightsVector}
   probabilities::AbstractMatrix{Float64}
   # these two correspond to the latest iteration only
-  # they squash all models together (and have an extra model indexing parameter)
+  # they squash all models together
+  # and have extra entries for the model index (row 1),
+  # distance to reference (row n + 2)
+  # and particle weight (row n + 3)
   latest_population::AbstractMatrix{Float64}
   latest_distances::AbstractVector{Float64}
   # Information about the progression of the algorithm: one item per iteration
   ntries::AbstractVector{Int}
   epsilons::AbstractVector{Float64}
-  acceptance_rates::AbstractVector{Float64}
+  # Acceptance rates per iteration i and model j
+  acceptance_rates::AbstractMatrix{Float64}
   # Priors and names of variables used--one list per model
   parameterpriors::AbstractVector{ParameterPriorVector}
   names::AbstractVector{NamesVector}
