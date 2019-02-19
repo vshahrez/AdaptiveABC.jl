@@ -193,6 +193,6 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
       println(round.(hcat(mean(diag(sig[j,i])./diag(sig[j,1])),pacc[j,i],nbs[j],p[j,i]),digits=3))
     end
   end
-  samp=ABCfit(pts,sig,wts,p,its,dists,epsilon,temp,pacc,names,models)
+  samp=APMCResult(pts,sig,wts,p,temp,dists,its,epsilon,pacc,models,names)
   return(samp)
 end
