@@ -5,6 +5,7 @@ module AdaptiveABC
   using StatsBase: weights
 
   include("types.jl")
+  include("utils.jl")
   include("APMC.jl")
 
   export APMCInput, APMCResult,
