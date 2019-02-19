@@ -91,7 +91,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
   temp=temp[:,1:s]
   for j in 1:lm
     pts[j,i]=temp[2:(np[j]+1),temp[1,:].==j]
-    wts[j,i]=StatsBase.weights(fill(1.0,sum(temp[1,:].==j)))
+    wts[j,i]=weights(fill(1.0,sum(temp[1,:].==j)))
   end
   dists=transpose(temp[(maximum(np)+2),:])
   for j in 1:lm
@@ -161,7 +161,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
           end
         end
           if length(wts[j,i])>1
-        wts[j,i]=StatsBase.weights(wts[j,i])
+        wts[j,i]=weights(wts[j,i])
           end
       else
         wts[j,i]=zeros(0)
