@@ -38,7 +38,7 @@ function APMCInput(
     )
   if names === nothing
     names = [
-      [string("p", i) for i in eachindex(simulators[m])]
+      [string("p", i) for i in eachindex(parameterpriors[m])]
       for m in eachindex(simulators)
       ]
   end
