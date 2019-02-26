@@ -7,6 +7,54 @@ const NamesVector = AbstractVector{String}  # or Symbol?
 
 # Note: priors on models assumed to be uniform for now
 
+struct RejectionInput
+  simulators::AbstractVector{Function}
+  parameterpriors::AbstractVector{ParameterPriorVector}
+  metric::Function
+  populationsize::Int
+  mindistance::Float64
+  names::Union{AbstractVector{NamesVector}, Nothing}
+  maxnparams::Int
+
+  function RejectionInput(
+      simulators, parameterpriors, metric,
+      populationsize, mindistance, names, maxnparams)
+    if populationsize <= 0
+      throw(DomainError(populationsize,
+        "population size must be greater than zero"))
+    elseif mindistance <= 0.0
+      throw(DomainError(mindistance,
+        "minimum accepted distance must be greater than zero"))
+    elseif maxnparams != maximum(length.(parameterpriors))
+      throw(DomainError(maxnparams,
+        "supplied maxnparams must agree with calculated value"))
+    end
+    return new(
+      simulators, parameterpriors, metric,
+      populationsize, mindistance, names, maxnparams
+      )
+  end
+end
+
+function RejectionInput(
+    simulators, parameterpriors, metric;
+    populationsize = 1000,
+    mindistance = Inf,
+    names = nothing
+    )
+  if names === nothing
+    names = [
+      [string("p", i) for i in eachindex(parameterpriors[m])]
+      for m in eachindex(simulators)
+      ]
+  end
+  maxnparams = maximum(length.(parameterpriors))
+  return RejectionInput(
+    simulators, parameterpriors, metric,
+    populationsize, mindistance, names, maxnparams
+    )
+end
+
 struct APMCInput
   simulators::AbstractVector{Function}
   parameterpriors::AbstractVector{ParameterPriorVector}
@@ -19,9 +67,16 @@ struct APMCInput
   function APMCInput(
       simulators, parameterpriors, metric,
       populationsize, quantilethreshold, minacceptance, names)
-    populationsize > 0 || DomainError("population size must be greater than zero")
-    0.0 <= quantilethreshold <= 1.0 || DomainError("quantile threshold must be between zero and one inclusive")
-    0.0 <= minacceptance <= 1.0 || DomainError("minimum acceptance rate must be between zero and one inclusive")
+    if populationsize <= 0
+      throw(DomainError(populationsize,
+        "population size must be greater than zero"))
+    elseif !(0.0 <= quantilethreshold <= 1.0)
+      throw(DomainError(quantilethreshold,
+        "quantile threshold must be between zero and one"))
+    elseif !(0.0 <= minacceptance <= 1.0)
+      throw(DomainError(minacceptance,
+        "minimum acceptance rate must be between zero and one"))
+    end
     return new(
       simulators, parameterpriors, metric,
       populationsize, quantilethreshold, minacceptance, names

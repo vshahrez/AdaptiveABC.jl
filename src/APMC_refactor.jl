@@ -19,7 +19,7 @@ function modelselection(
   # initial setup?
 
   # core computation: distributed for loop
-  temp=@distributed hcat for j in 1:input.populationsize
+  temp_population = @distributed hcat for j in 1:input.populationsize
     rejection_sample(input, reference)  # previously init(models,expd,np,rho)
   end
 end
@@ -28,12 +28,16 @@ function rejection_sample(
     input::RejectionInput,
     reference
     )
-  model_index = sample(1:length(input.simulators))  # store the number of models explicitly?
-  parameters = rand.(input.priors[model_index])
-  generated_data = input.simulators[model_index](parameters)
-  distance = input.metric(generated_data, reference)
-
-  particle = vcat(model_index, parameters, padded_zeros, distance)
-
-  return particle
+  distance = Inf
+  ntries = 0
+  while distance >= input.mindistance
+    model_index = sample(1:length(input.simulators))  # store the number of models explicitly?
+    parameters = rand.(input.priors[model_index])
+    generated_data = input.simulators[model_index](parameters)
+    ntries += 1
+    distance = input.metric(generated_data, reference)
+  end
+  nzeros = input.maxnparams - length(input.parameterpriors[model_index])
+  pad_zeros = fill(0.0, nzeros)
+  return vcat(model_index, parameters, pad_zeros, ntries)
 end
