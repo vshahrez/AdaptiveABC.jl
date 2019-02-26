@@ -7,8 +7,10 @@ module AdaptiveABC
   include("types.jl")
   include("utils.jl")
   include("APMC.jl")
+  include("modelselection.jl")
 
   export APMCInput, APMCResult,
-    modelselection, APMC
+    APMC,
+    modelselection
 
 end # module

@@ -1,11 +1,13 @@
 #rejection samplerm (for first iteration)
-function init(models,expd,np,rho)
+function init(models,expd,np,rho; mineps = Inf)
   d=Inf
-  count=1
-  m=sample(1:length(models))
-  params=rand(models[m])
-  d=rho[m](expd,params)
-  # end
+  count = 0
+  while d >= mineps
+    count += 1
+    m=sample(1:length(models))
+    params=rand(models[m])
+    d=rho[m](expd,params)
+  end
   return vcat(m,params,fill(0,maximum(np)-np[m]),d,count)
 end
 
@@ -34,33 +36,7 @@ function cont(models,pts,wts,expd,np,i,ker,rho)
   return vcat(m,params,fill(0,maximum(np)-np[m]),d,count)
 end
 
-function modelselection(
-    input::APMCInput,
-    reference;
-    APMC_kwargs...
-    )
-  distance_generators = [
-    function(reference_data, parameters)
-      simulated_data = simulator(parameters)
-      return input.metric(simulated_data, reference_data)
-    end
-    for simulator in input.simulators
-    ]
-  result = APMC(
-    input.populationsize,
-    reference,
-    input.parameterpriors,
-    distance_generators;
-    names = input.names,
-    prop = input.quantilethreshold,
-    paccmin = input.minacceptance,
-    APMC_kwargs...
-    )
-
-  return result
-end
-
-function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:length(models[m])] for m in 1:length(models)],prop=0.5,paccmin=0.02,n=2)
+function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:length(models[m])] for m in 1:length(models)],prop=0.5,paccmin=0.02,n=2, mineps = Inf)
   i=1
   lm=length(models)
   s=round(Int,N*prop)
@@ -81,7 +57,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
   #model probability at each iteration array
   p=zeros(lm,1)
   temp=@distributed hcat for j in 1:N
-    init(models,expd,np,rho)
+    init(models,expd,np,rho; mineps = mineps)
   end
   its=[sum(temp[size(temp)[1],:])]
   epsilon=[quantile(collect(temp[maximum(np)+2,:]),prop)]
