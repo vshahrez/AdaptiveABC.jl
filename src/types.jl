@@ -4,6 +4,7 @@ const WeightsVector = AbstractVector{Float64}
 # parameter priors and names: a vector for each model with length = nparameters
 const ParameterPriorVector = AbstractVector{ContinuousUnivariateDistribution}
 const NamesVector = AbstractVector{String}  # or Symbol?
+# is subtyping better?
 
 # Note: priors on models assumed to be uniform for now
 
@@ -12,9 +13,11 @@ struct RejectionInput
   parameterpriors::AbstractVector{ParameterPriorVector}
   metric::Function
   populationsize::Int
+  nkeep::Int
   mindistance::Float64
   names::Union{AbstractVector{NamesVector}, Nothing}
   maxnparams::Int
+  nmodels::Int
 
   function RejectionInput(
       simulators, parameterpriors, metric,
@@ -22,16 +25,22 @@ struct RejectionInput
     if populationsize <= 0
       throw(DomainError(populationsize,
         "population size must be greater than zero"))
+    elseif nkeep <= 0
+      throw(DomainError(nkeep,
+        "number of kept particles must be greater than zero"))
     elseif mindistance <= 0.0
       throw(DomainError(mindistance,
         "minimum accepted distance must be greater than zero"))
     elseif maxnparams != maximum(length.(parameterpriors))
       throw(DomainError(maxnparams,
         "supplied maxnparams must agree with calculated value"))
+    elseif nmodels != length(simulators) || nmodels != length(parameterpriors)
+      throw(DomainError(nmodels,
+        "supplied nmodels must agree with calculated value"))
     end
     return new(
       simulators, parameterpriors, metric,
-      populationsize, mindistance, names, maxnparams
+      populationsize, nkeep, mindistance, names, maxnparams, nmodels
       )
   end
 end
@@ -39,9 +48,11 @@ end
 function RejectionInput(
     simulators, parameterpriors, metric;
     populationsize = 1000,
+    quantilethreshold = 0.5,
     mindistance = Inf,
     names = nothing
     )
+  nkeep = round(Int, quantilethreshold * populationsize)
   if names === nothing
     names = [
       [string("p", i) for i in eachindex(parameterpriors[m])]
@@ -49,9 +60,10 @@ function RejectionInput(
       ]
   end
   maxnparams = maximum(length.(parameterpriors))
+  nmodels = length(simulators)
   return RejectionInput(
     simulators, parameterpriors, metric,
-    populationsize, mindistance, names, maxnparams
+    populationsize, nkeep, mindistance, names, maxnparams, nmodels
     )
 end
 
@@ -60,7 +72,7 @@ struct APMCInput
   parameterpriors::AbstractVector{ParameterPriorVector}
   metric::Function
   populationsize::Int
-  quantilethreshold::Float64
+  nkeep::Int
   minacceptance::Float64
   names::Union{AbstractVector{NamesVector}, Nothing}
 
@@ -70,16 +82,16 @@ struct APMCInput
     if populationsize <= 0
       throw(DomainError(populationsize,
         "population size must be greater than zero"))
-    elseif !(0.0 <= quantilethreshold <= 1.0)
-      throw(DomainError(quantilethreshold,
-        "quantile threshold must be between zero and one"))
+    elseif nkeep <= 0
+      throw(DomainError(nkeep,
+        "number of kept particles must be greater than zero"))
     elseif !(0.0 <= minacceptance <= 1.0)
       throw(DomainError(minacceptance,
         "minimum acceptance rate must be between zero and one"))
     end
     return new(
       simulators, parameterpriors, metric,
-      populationsize, quantilethreshold, minacceptance, names
+      populationsize, nkeep, minacceptance, names
       )
   end
 end
@@ -91,6 +103,7 @@ function APMCInput(
     minacceptance = 0.02,
     names = nothing
     )
+  nkeep = round(Int, quantilethreshold * populationsize)
   if names === nothing
     names = [
       [string("p", i) for i in eachindex(parameterpriors[m])]
@@ -99,12 +112,12 @@ function APMCInput(
   end
   return APMCInput(
     simulators, parameterpriors, metric,
-    populationsize, quantilethreshold, minacceptance, names
+    populationsize, nkeep, minacceptance, names
     )
 end
 
 # APMC algorithm output structure
-struct APMCResult
+struct ModelSelectionResult
   # for these four, M[i, j] corresponds to iteration i and model j
   populations::AbstractMatrix{PopulationMatrix}
   covariances::AbstractMatrix{CovarianceMatrix}
@@ -125,4 +138,13 @@ struct APMCResult
   # Priors and names of variables used--one list per model
   parameterpriors::AbstractVector{ParameterPriorVector}
   names::AbstractVector{NamesVector}
+end
+
+# abstract type ModelSelectionParticle <: Array{Float64}
+
+struct RejectionParticle
+  model_index::Int
+  parameters::Vector{Float64}  # use StaticArrays?
+  distance::Float64
+  ntries::Int
 end

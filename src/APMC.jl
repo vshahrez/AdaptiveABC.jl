@@ -173,6 +173,6 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
     "APMC result incoming",
     pts, sig, wts, p, temp, dists, its, epsilon, pacc, models, names
     )
-  samp=APMCResult(pts,sig,wts,p,temp,vec(dists),its,epsilon,pacc,models,names)
+  samp=ModelSelectionResult(pts,sig,wts,p,temp,vec(dists),its,epsilon,pacc,models,names)
   return(samp)
 end
