@@ -7,6 +7,7 @@ function init(models,expd,np,rho; mineps = Inf)
     m=sample(1:length(models))
     params=rand(models[m])
     d=rho[m](expd,params)
+    @info "sampled particle" m params d count
   end
   return vcat(m,params,fill(0,maximum(np)-np[m]),d,count)
 end
