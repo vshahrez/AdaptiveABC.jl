@@ -1,5 +1,5 @@
 module AdaptiveABC
-  using Distributed: @distributed
+  using Distributed
   using Distributions
   using LinearAlgebra
   using StatsBase: weights
