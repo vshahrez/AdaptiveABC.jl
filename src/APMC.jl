@@ -8,12 +8,13 @@ function init(models,expd,np,rho; mineps = Inf)
     m=sample(1:length(models))
     params=rand(models[m])
     d=rho[m](expd,params)
+    if d < mineps
+      return vcat(m,params,fill(0,maximum(np)-np[m]),d,count)
+    end
     if count % 100 == 0
-      @Base.CoreLogging.logmsg Base.LogLevel(1100) "particles not accepted" count worker
+      @warn ">100 particles rejected due to mineps" count worker
     end
   end
-  @Base.CoreLogging.logmsg Base.LogLevel(1100) "new particle generated" count worker
-  return vcat(m,params,fill(0,maximum(np)-np[m]),d,count)
 end
 
 #SMC sampler (for subsequent iterations)
