@@ -156,7 +156,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
     for j in 1:lm
       if(size(pts[j,i])[2]>np[j])
         #sig[j,i]=cov(transpose(pts[j,i]),wts[j,i])
-        sig[j,i]=cov(transpose(pts[j,i]))
+        sig[j,i]=cov(pts[j,i],wts[j,i],2,corrected=false)
         if isposdef(sig[j,i])
           dker=MvNormal(pts[j,i-1][:,1],n*sig[j,i])
           if pdf(dker,pts[j,i][:,1])==Inf
