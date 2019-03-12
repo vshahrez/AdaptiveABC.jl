@@ -88,6 +88,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
     nbs[j]=length(wts[j,i])
     println(round.(hcat(mean(diag(sig[j,i])[1:(np[j])]),pacc[j,i],nbs[j],p[j,i]),digits=3))
   end
+  flush(stdout)
   while maximum(pacc[:,i])>paccmin
     pts=reshape(pts,i*length(models))
     sig=reshape(sig,i*length(models))
@@ -174,6 +175,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
       nbs[j]=length(wts[j,i])
       println(round.(hcat(mean(diag(sig[j,i])./diag(sig[j,1])),pacc[j,i],nbs[j],p[j,i]),digits=3))
     end
+    flush(stdout)
   end
   @Base.CoreLogging.logmsg(Base.LogLevel(1100),
     "APMC result incoming",
