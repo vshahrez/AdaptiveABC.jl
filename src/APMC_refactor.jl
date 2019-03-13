@@ -40,14 +40,14 @@ function modelselection(
   weights = Matrix{Vector{Float64}}(undef, 1, input.nmodels)
   probabilities = Matrix{Vector{Float64}}(undef, 1, input.nmodels)
   # iteration i = 1
-  for j in 1:index.nmodels
+  for j in 1:input.nmodels
     nparticles = length(particles_by_model[j])
     populations[1, j] = [
       particles_by_model[j][k][l].parameters
       for l in 1:nparticles,
         k in 1:input.nparameters[j]
       ]
-    weights[1, j] = weights(ones(input.nparameters[j], nparticles))
+    weights[1, j] = StatsBase::weights(ones(input.nparameters[j], nparticles))
     covariances[1, j] = cov(populations[1, j], weights[1, j], vardim = 2, corrected = false)
     probabilities[1, j] = sum(weights[1, j])  # requires normalisation!?
   end
@@ -77,18 +77,52 @@ function modelselection(
     )
 end
 
+function modelselection(
+    input::ModelSelectionResult,
+    reference
+    )
+  # To Do: Add alg keyword (using singleton type?) to indicate usage of APMC
+
+  # core computation: distributed for loop
+  new_particles = @distributed vcat for j in 1:input.populationsize
+    pmc_sample(input, reference)  # previously cont(models,pts,wts,expd,np,i,ker,rho)
+  end
+  ntries = sum(particle.ntries for particle in particles)
+end
+
 function rejection_sample(
     input::RejectionInput,
     reference
     )
   distance = Inf
-  ntries = 0
+  ntries = 0  # move tracking out of this function? then ugly while loop no longer necessary
   while distance >= input.mindistance
     model_index = sample(1:input.nmodels)
-    parameters = rand.(input.priors[model_index])
+    parameters = rand.(input.parameterpriors[model_index])
     generated_data = input.simulators[model_index](parameters)  # include in output somehow?
     ntries += 1
     distance = input.metric(generated_data, reference)
+    if distance < input.mindistance
+      return RejectionParticle(model_index, parameters, distance, ntries)
+    end
   end
-  return RejectionParticle(model_index, parameters, distance, ntries)
+end
+
+function pmc_sample(
+    input::ModelSelectionResult,
+    reference
+    )
+  model_index = sample(1:input.nmodels)
+  # if this model is dead, resample...
+
+  # sample particle from previous population using previous weights
+  parameters = sample(input.populations[end, model_index], input.weights[end, model_index])
+  # then perturb particle with PMC kernel
+  parameters += rand(input.kernels[model_index])  # won't run, kernel not in input
+  # if the perturbed particle is outside the prior, resample...
+
+  generated_data = input.simulators[model_index](parameters)
+  distance = input.metric(generated_data, reference)
+
+  return PMCParticle(model_index, parameters, distance)
 end

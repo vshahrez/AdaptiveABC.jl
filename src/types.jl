@@ -21,7 +21,7 @@ struct RejectionInput
 
   function RejectionInput(
       simulators, parameterpriors, metric,
-      populationsize, mindistance, names, maxnparams)
+      populationsize, mindistance, names, maxnparams, nmodels)
     if populationsize <= 0
       throw(DomainError(populationsize,
         "population size must be greater than zero"))
