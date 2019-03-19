@@ -62,7 +62,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
   wts=similar(template)
   #model probability at each iteration array
   p=zeros(lm,1)
-  temp=@distributed hcat for j in 1:N
+  temp=@distributed hcat for j in range(1, stop = N)
     init(models,expd,np,rho; mineps = mineps)
   end
   its=[sum(temp[size(temp)[1],:])]
@@ -126,7 +126,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
       pts[j,i]=temp[2:(np[j]+1),temp[1,:].==j]
       if size(pts[j,i])[2]>0
         keep=inds[reshape(temp[1,:].==j,s)].<=s
-        wts[j,i]= @distributed vcat for k in 1:length(keep)
+        wts[j,i]= @distributed vcat for k in range(1, stop = length(keep))
           if !keep[k]
             pdf(models[j],(pts[j,i][:,k]))/(1/(sum(wts[j,i-1]))*dot(values(wts[j,i-1]),pdf(ker[j],broadcast(-,pts[j,i-1],pts[j,i][:,k]))))
           else
