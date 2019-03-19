@@ -6,7 +6,7 @@ function init(models,expd,np,rho; mineps = Inf)
   while d >= mineps
     count += 1
     m=sample(1:length(models))
-    params=rand(models[m])
+    params=rand.(models[m])
     d=rho[m](expd,params)
     if d < mineps
       return vcat(m,params,fill(0,maximum(np)-np[m]),d,count)
