@@ -1,7 +1,7 @@
 name = "AdaptiveABC"
 uuid = "cdf71b62-2f9f-11e9-16f1-c99e795534db"
 authors = ["Anthony Bowman <anthony.bowman10@imperial.ac.uk>", "Istvan Kleijn <istvan.kleijn16@imperial.ac.uk>"]
-version = "0.0.5"
+version = "0.0.7"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"

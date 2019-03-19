@@ -62,7 +62,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
   wts=similar(template)
   #model probability at each iteration array
   p=zeros(lm,1)
-  temp=@distributed hcat for j in 1:N
+  temp=@distributed hcat for j in range(1, stop = N)
     init(models,expd,np,rho; mineps = mineps)
   end
   its=[sum(temp[size(temp)[1],:])]
@@ -105,7 +105,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
     for j in 1:lm
       ker[j]=MvNormal(fill(0.0,np[j]),n*sig[j,i-1])
     end
-    temp2=@distributed hcat for j in (1:(N-s))
+    temp2=@distributed hcat for j in range(1, stop = N - s)
       cont(models,pts,wts,expd,np,i,ker,rho)
     end
     its=vcat(its,sum(temp2[size(temp2)[1],:]))
@@ -126,7 +126,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
       pts[j,i]=temp[2:(np[j]+1),temp[1,:].==j]
       if size(pts[j,i])[2]>0
         keep=inds[reshape(temp[1,:].==j,s)].<=s
-        wts[j,i]= @distributed vcat for k in 1:length(keep)
+        wts[j,i]= @distributed vcat for k in range(1, stop = length(keep))
           if !keep[k]
             pdf(models[j],(pts[j,i][:,k]))/(1/(sum(wts[j,i-1]))*dot(values(wts[j,i-1]),pdf(ker[j],broadcast(-,pts[j,i-1],pts[j,i][:,k]))))
           else
@@ -134,7 +134,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
           end
         end
         if length(wts[j,i])==1
-          wts[j,i]=fill(wts[j,i],1)
+          wts[j,i]=weights(fill(wts[j,i],1))
         end
         l=1
         for k in 1:length(keep)
@@ -158,7 +158,7 @@ function APMC(N,expd,models,rho,;names=Vector[[string("parameter",i) for i in 1:
       if(size(pts[j,i])[2]>np[j])
         #sig[j,i]=cov(transpose(pts[j,i]),wts[j,i])
         sig[j,i]=cov(pts[j,i],wts[j,i],2,corrected=false)
-        if isposdef(sig[j,i])
+        if isposdef(n * sig[j,i])
           dker=MvNormal(pts[j,i-1][:,1],n*sig[j,i])
           if pdf(dker,pts[j,i][:,1])==Inf
             sig[j,i]=sig[j,i-1]
