@@ -19,15 +19,21 @@ function modelselection(
   # initial setup?
 
   # core computation: distributed for loop
-  particles = @distributed vcat for j in 1:input.populationsize  # previously hcat of vectors
-    rejection_sample(input, reference)  # previously init(models,expd,np,rho)
+  iterations = @distributed vcat for j in 1:input.populationsize  # previously hcat of vectors
+    particle = EmptyParticle()
+    ntries = 0
+    while particle == EmptyParticle()
+      particle = rejection_sample(input, reference)  # previously init(models,expd,np,rho)
+      ntries += 1
+    end
+    (particle = particle, ntries = ntries)
   end
-  ntries = sum(particle.ntries for particle in particles)
+  ntries = sum(iteration.ntries for iteration in iterations)
 
   # Sort particle vector and keep only the top
-  getdistance(p) = p.distance
-  sort!(particles, by = getdistance)
-  particles = particles[1:input.nkeep]
+  getdistance(iteration) = iteration.particle.distance
+  sort!(iterations, by = getdistance)
+  particles = [iteration.particle for iteration in iterations[1:input.nkeep]]
   epsilon = particles[end].distance
 
   # filter particles according to the model that generated them
@@ -88,23 +94,22 @@ function modelselection(
     pmc_sample(input, reference)  # previously cont(models,pts,wts,expd,np,i,ker,rho)
   end
   ntries = sum(particle.ntries for particle in particles)
+
 end
 
 function rejection_sample(
     input::RejectionInput,
     reference
     )
-  distance = Inf
-  ntries = 0  # move tracking out of this function? then ugly while loop no longer necessary
-  while distance >= input.mindistance
-    model_index = sample(1:input.nmodels)
-    parameters = rand.(input.parameterpriors[model_index])
-    generated_data = input.simulators[model_index](parameters)  # include in output somehow?
-    ntries += 1
-    distance = input.metric(generated_data, reference)
-    if distance < input.mindistance
-      return RejectionParticle(model_index, parameters, distance, ntries)
-    end
+  model_index = sample(1:input.nmodels)
+  parameters = rand.(input.parameterpriors[model_index])
+  generated_data = input.simulators[model_index](parameters)  # include in output somehow?
+  distance = input.metric(generated_data, reference)
+
+  if distance < input.mindistance
+    return Particle(model_index, parameters, distance)
+  else
+    return EmptyParticle()
   end
 end
 

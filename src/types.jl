@@ -142,9 +142,9 @@ end
 
 # abstract type ModelSelectionParticle <: Array{Float64}
 
-struct RejectionParticle
+struct Particle
   model_index::Int
   parameters::Vector{Float64}  # use StaticArrays?
   distance::Float64
-  ntries::Int
 end
+EmptyParticle() = Particle(0, [], 0.0)
