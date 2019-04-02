@@ -88,6 +88,10 @@ function modelselection(
     reference
     )
   # To Do: Add alg keyword (using singleton type?) to indicate usage of APMC
+  #        handle options for choosing the perturbation kernels
+
+  # setup perturbation kernels
+  kernels = generate_kernels(input)
 
   # core computation: distributed for loop
   new_particles = @distributed vcat for j in 1:input.populationsize
@@ -115,19 +119,32 @@ end
 
 function pmc_sample(
     input::ModelSelectionResult,
-    reference
+    reference,
+    perturbation_kernels
     )
-  model_index = sample(1:input.nmodels)
-  # if this model is dead, resample...
-
+  model_index = sample(1:input.nmodels)  # won't run, nmodels not in input
+  if size(input.populations[end, model_index], 2) == 0  # model is dead
+    return EmptyParticle()
+  end
   # sample particle from previous population using previous weights
   parameters = sample(input.populations[end, model_index], input.weights[end, model_index])
   # then perturb particle with PMC kernel
-  parameters += rand(input.kernels[model_index])  # won't run, kernel not in input
-  # if the perturbed particle is outside the prior, resample...
+  parameters += rand(perturbation_kernels[model_index])  # won't run, kernel not in input
+  # if perturbed particle outside the prior
+  if prod(pdf.(input.parameterpriors, parameters)) == 0.0
+    return EmptyParticle()
+  end
 
   generated_data = input.simulators[model_index](parameters)
   distance = input.metric(generated_data, reference)
 
-  return PMCParticle(model_index, parameters, distance)
+  return Particle(model_index, parameters, distance)
+end
+
+function generate_kernels(input::ModelSelectionResult)
+  nmodels = length(input.parameterpriors)
+  means = [zeros(length(input.parameterpriors[j]) for j in 1:nmodels]
+  covariances = [covariances[end, j] for j in 1:nmodels]
+
+  return [MvNormal(means[j], 2.0 * covariances[j]) for j in 1:nmodels]
 end
