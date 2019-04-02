@@ -138,6 +138,7 @@ struct ModelSelectionResult
   # Priors and names of variables used--one list per model
   parameterpriors::AbstractVector{ParameterPriorVector}
   names::AbstractVector{NamesVector}
+  # To Do: must include enough information to restart simulation.
 end
 
 # abstract type ModelSelectionParticle <: Array{Float64}
@@ -148,3 +149,5 @@ struct Particle
   distance::Float64
 end
 EmptyParticle() = Particle(0, [], 0.0)
+
+# To Do: write concatenation function for ModelSelectionResults
