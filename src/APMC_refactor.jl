@@ -58,12 +58,12 @@ function modelselection(
     probabilities[1, j] = sum(weights[1, j])  # requires normalisation!?
   end
   temp_distances = [p.distance for p in particles]
-  temp_population = vcat(
+  temp_population = collect(transpose(vcat(
     [p.model_index for p in particles],
     [p.parameters for p in particles],
     temp_distances,
     [1.0 for p in particles]  # weights
-    )
+  )))
   ntries = sum(particle.ntries for particle in particles)
   epsilon = particles[end].distance
   acceptance_rates = ones(1, input.nmodels)
@@ -93,6 +93,10 @@ function modelselection(
 
   # setup perturbation kernels
   kernels = generate_kernels(input)
+  previous_particles = vcat(
+    Particle(latest_population[1, i], latest_population[2:end - 2], latest_distances)
+    for particle_index in 1:size(input.latest_population, 2)
+  )
 
   iterations = @distributed vcat for j in 1:input.populationsize
     particle = EmptyParticle()
@@ -105,19 +109,20 @@ function modelselection(
   end
   ntries = sum(iteration.ntries for iteration in iterations)
 
+  particles = vcat(previous_particles, (i.particle for i in iterations))
+
   # Sort particle vector and keep only the top
-  getdistance(iteration) = iteration.particle.distance
-  sort!(iterations, by = getdistance)
-  particles = [iteration.particle for iteration in iterations[1:input.nkeep]]
-  # Merge with previous APMC run to obtain threshold
-  epsilon = ...
-  # Re-sort?
+  getdistance(particle) = particle.distance
+  sort!(particles, by = getdistance)
+  particles = particles[1:input.nkeep]
+  epsilon = particles[end].distance
 
   # filter particles according to the model that generated them
   particle_in_model(j) = particle -> particle.model_index == j
   particles_by_model = [filter(particle_in_model(j), particles) for j in 1:input.nmodels]
 
   # generate the output
+  # Remove a dimension here? Iteration dimension never used?
   populations = Matrix{Matrix{Float64}}(undef, 1, input.nmodels)
   covariances = similar(populations)
   weights = Matrix{Vector{Float64}}(undef, 1, input.nmodels)
@@ -129,18 +134,18 @@ function modelselection(
       for l in 1:nparticles,
         k in 1:input.nparameters[j]
       ]
-    weights[1, j] = ... # NORMALISATION
+    weights[1, j] = generate_weights(input, particles_by_model[j], kernels)
     covariances[1, j] = cov(populations[1, j], weights[1, j], vardim = 2, corrected = false)
     # Check conditions on covariance matrix for models with few particles accepted
     probabilities[1, j] = sum(weights[1, j])
   end
   temp_distances = [p.distance for p in particles]
-  temp_population = vcat(
+  temp_population = collect(transpose(hcat(
     [p.model_index for p in particles],
     [p.parameters for p in particles],
     temp_distances,
     [1.0 for p in particles]  # weights  - CHANGE TO NORMALISED WEIGHTS
-    )
+  )))
   ntries = sum(particle.ntries for particle in particles)
   epsilon = particles[end].distance
   acceptance_rates = ... # CALCULATE
@@ -212,4 +217,28 @@ function generate_kernels(input::ModelSelectionResult)
   covariances = [covariances[end, j] for j in 1:nmodels]
 
   return [MvNormal(means[j], 2.0 * covariances[j]) for j in 1:nmodels]
+end
+
+function generate_weights(
+    input::ModelSelectionResult,
+    model_index,
+    new_particle,
+    perturbation_kernel
+    )
+  priors = input[]
+  pdf(input.parameterpriors[])... # NORMALISATION
+  # pdf(models[j],(pts[j,i][:,k]))/(1/(sum(wts[j,i-1]))*dot(values(wts[j,i-1]),pdf(ker[j],broadcast(-,pts[j,i-1],pts[j,i][:,k]))))
+  # into:
+  # numerator = pdf(models[j], pts[j, i][:, k])
+  # denominator = (1 / sum(wts[j, i-1])) * dot(values(wts[j, i - 1]), pdf(ker[j], broadcast(-, pts[j, i-1], pts[j, i][:, k])))
+  evaluated_prior = prod(pdf.(input.parameterpriors[model_index], new_particle))
+  old_weights = input.weights[end, model_index]
+  sum_old_weights = sum(old_weights)  # using cached sum for StatsBase::Weights
+  evaluated_kernels = [
+    pdf(perturbation_kernel, old_particle - new_particle)
+    for old_particle in input.population[end, model_index]  # does not work because population stored as matrix instead of vector of particles...
+  ]
+  numerator = evaluated_prior * sum_old_weights
+  denominator = dot(old_weights * evaluated_kernel)
+  weight = numerator / denominator
 end

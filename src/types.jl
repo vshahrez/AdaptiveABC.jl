@@ -128,7 +128,7 @@ struct ModelSelectionResult
   # and have extra entries for the model index (row 1),
   # distance to reference (row n + 2)
   # and particle weight (row n + 3)
-  latest_population::AbstractMatrix{Float64}
+  latest_population::AbstractMatrix{Float64}  # rewrite in terms of new Particle type
   latest_distances::AbstractVector{Float64}
   # Information about the progression of the algorithm: one item per iteration
   ntries::AbstractVector{Int}
